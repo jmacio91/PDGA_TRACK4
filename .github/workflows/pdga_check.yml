@@ -1,0 +1,52 @@
+
+name: Tracker
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check-pdga:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: List repo files
+        run: ls -R
+    
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch full history needed for branch switching
+
+      - name: Configure Git user for commits
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+        
+      - name: Print UTC timestamp
+        run: date -u
+
+      - name: Echo test message
+        run: echo "Hello from the scheduler!"
+
+      - name: Run PDGA tracker
+        run: python Tracker.py
+        env:
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          PUSHOVER_API_TOKEN: ${{ secrets.PUSHOVER_API_TOKEN }}
+          
+      - name: Show tracker state values
+        run: |
+          echo "=== Contents of last_known.txt ==="
+          cat last_known.txt || echo "File not found"
+          echo "=== Contents of last_milestone.txt ==="
+          cat last_milestone.txt || echo "File not found"
